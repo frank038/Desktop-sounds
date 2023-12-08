@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# 20231207
+# 20231208
 
 # e.g.: "Thunderbird" because has its own sound notification
 PROGRAMS_TO_SKIP = []
@@ -12,6 +12,15 @@ ID_TO_SKIP = ["*"]
 # put the sound file in the sound folder
 ID_SPECIAL = []
 
+# urgency low plays sound
+URGENCY_LOW_SOUND = 1
+
+# urgency normal plays sound
+URGENCY_NORMAL_SOUND = 1
+
+# urgency critical plays sound
+URGENCY_CRITICAL_SOUND = 1
+
 # program to play wav files
 a_player = "aplay"
 
@@ -20,12 +29,22 @@ a_player = "aplay"
 # from pydub.playback import play
 
 import os
+import subprocess
+
+curr_path = os.getcwd()
 
 def play_sound(_sound):
     # song = AudioSegment.from_wav("sounds/"+_sound)
     # play(song)
     #
-    os.system("{0} {1} 1> /dev/null 2> /dev/null".format(a_player, "sounds/"+_sound))
+    sound_full_path = os.path.join(curr_path, "sounds", _sound)
+    # os.system("{0} {1} 1> /dev/null 2> /dev/null".format(a_player, sound_full_path))
+    command = [a_player, sound_full_path]
+    try:
+        subprocess.Popen(command, 
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT)
+    except: pass
     return
 
 
@@ -98,8 +117,17 @@ def notifications(bus, message):
             lvl_sound = "urgency-low.wav"
         elif lvl_urgency == 2:
             lvl_sound = "urgency-critical.wav"
-    #
-    play_sound(lvl_sound)
+    # skip unwanted sound
+    if not URGENCY_LOW_SOUND and lvl_urgency == 0:
+        return
+    elif not URGENCY_NORMAL_SOUND and lvl_urgency == 1:
+        return
+    elif not URGENCY_CRITICAL_SOUND and lvl_urgency == 2:
+        return
+    # if the file desktop_notification_silent exists in this program directory
+    # no sound will be played
+    if not os.path.exists(os.path.join(curr_path, "desktop_notification_silent")):
+        play_sound(lvl_sound)
     
     
 DBusGMainLoop(set_as_default=True)
